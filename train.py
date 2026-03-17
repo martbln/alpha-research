@@ -37,9 +37,15 @@ def load_ohlcv() -> "pd.DataFrame":
         os.makedirs("data", exist_ok=True)
         df = yf.download("^GSPC", start="2000-01-01", end="2024-12-31",
                          progress=False, auto_adjust=True)
+        if hasattr(df.columns, "levels"):
+            df.columns = df.columns.get_level_values(0)
         df.to_csv(DATA_FILE)
         print(f"Downloaded {len(df)} trading days")
-    return pd.read_csv(DATA_FILE, index_col=0, parse_dates=True)
+    df = pd.read_csv(DATA_FILE, index_col=0, parse_dates=True)
+    # Drop non-numeric rows (yfinance >= 0.2 writes ticker as second header row)
+    df = df[pd.to_numeric(df["Close"], errors="coerce").notna()].copy()
+    df["Close"] = df["Close"].astype(float)
+    return df
 
 
 def build_dataset(df) -> tuple:

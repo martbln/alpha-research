@@ -15,5 +15,8 @@ else:
     print("Downloading S&P 500 data (2000–2024)...")
     df = yf.download("^GSPC", start="2000-01-01", end="2024-12-31",
                      progress=False, auto_adjust=True)
+    # Flatten multi-level columns (yfinance >= 0.2 adds ticker as second header row)
+    if hasattr(df.columns, "levels"):
+        df.columns = df.columns.get_level_values(0)
     df.to_csv(out)
     print(f"Saved {len(df)} trading days → {out}")
